@@ -4,7 +4,9 @@ import { useState, useEffect } from 'react';
 import Navbar from '@/components/Navbar';
 import ProposalCard from '@/components/ProposalCard';
 import CreateProposalModal from '@/components/CreateProposalModal';
-import { PlusCircle, Info, Landmark, Users, Search, Target } from 'lucide-react';
+import { PlusCircle, Info, Landmark, Users, Search, Target, Coins } from 'lucide-react';
+import { getContract, ADDRESSES, DAO_ABI, TOKEN_ABI, getSigner } from '@/utils/web3';
+import { ethers } from 'ethers';
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -38,16 +40,77 @@ export default function Home() {
     }
   ]);
 
-  const handleCreateProposal = (newProposal) => {
-    const proposal = {
-      id: proposals.length + 1,
-      ...newProposal,
-      voteCountAsYes: 0,
-      voteCountAsNo: 0,
-      active: true,
-      timeLeft: "3d 00h 00m"
-    };
-    setProposals([proposal, ...proposals]);
+  const handleCreateProposal = async (newProposal) => {
+    try {
+      const contract = await getContract(ADDRESSES.daoVoting, DAO_ABI, true);
+      if (!contract) return;
+
+      // In a real app, we would upload to IPFS here
+      // For now, we'll use a dummy hash
+      const dummyIpfsHash = "Qm" + Math.random().toString(36).substring(2, 12);
+      
+      const tx = await contract.createProposal(dummyIpfsHash);
+      console.log("Transaction sent:", tx.hash);
+      await tx.wait();
+      console.log("Proposal created on-chain!");
+
+      const proposal = {
+        id: proposals.length + 1,
+        ...newProposal,
+        voteCountAsYes: 0,
+        voteCountAsNo: 0,
+        active: true,
+        timeLeft: "3d 00h 00m"
+      };
+      setProposals([proposal, ...proposals]);
+    } catch (error) {
+      console.error("Error creating proposal:", error);
+      alert("Failed to create proposal. Do you have VTK tokens?");
+    }
+  };
+
+  const handleVote = async (id, support) => {
+    try {
+      const contract = await getContract(ADDRESSES.daoVoting, DAO_ABI, true);
+      if (!contract) return;
+
+      const tx = await contract.vote(id - 1, support); // Contracts use 0-based indexing
+      console.log("Voting transaction sent:", tx.hash);
+      await tx.wait();
+      console.log("Vote recorded!");
+
+      setProposals(prev => prev.map(p => {
+        if (p.id === id) {
+          return {
+            ...p,
+            voteCountAsYes: support ? p.voteCountAsYes + 1000 : p.voteCountAsYes,
+            voteCountAsNo: !support ? p.voteCountAsNo + 1000 : p.voteCountAsNo
+          };
+        }
+        return p;
+      }));
+    } catch (error) {
+      console.error("Error voting:", error);
+      alert("Voting failed. Check your token balance and if you've already voted.");
+    }
+  };
+
+  const handleMint = async () => {
+    try {
+      const signer = await getSigner();
+      if (!signer) return;
+      
+      const contract = await getContract(ADDRESSES.votingToken, TOKEN_ABI, true);
+      if (!contract) return;
+
+      const tx = await contract.mint(await signer.getAddress(), ethers.parseUnits("1000", 18));
+      console.log("Minting transaction sent:", tx.hash);
+      await tx.wait();
+      alert("Successfully minted 1,000 VTK tokens!");
+    } catch (error) {
+      console.error("Error minting tokens:", error);
+      alert("Minting failed. Are you the owner or using a Hardhat account?");
+    }
   };
 
   return (
@@ -76,13 +139,22 @@ export default function Home() {
               </p>
             </div>
             
-            <button 
-              onClick={() => setIsModalOpen(true)}
-              className="btn-primary flex items-center gap-2 h-14 px-8 text-lg"
-            >
-              <PlusCircle size={22} />
-              Create Proposal
-            </button>
+            <div className="flex flex-col md:flex-row gap-4">
+              <button 
+                onClick={handleMint}
+                className="btn-secondary flex items-center gap-2 h-14 px-8 text-lg"
+              >
+                <Coins size={22} className="text-yellow-500" />
+                Mint Test Tokens
+              </button>
+              <button 
+                onClick={() => setIsModalOpen(true)}
+                className="btn-primary flex items-center gap-2 h-14 px-8 text-lg"
+              >
+                <PlusCircle size={22} />
+                Create Proposal
+              </button>
+            </div>
           </div>
         </div>
 
@@ -132,7 +204,7 @@ export default function Home() {
         {/* Proposals List */}
         <div className="grid grid-cols-1 gap-6">
           {proposals.map(proposal => (
-            <ProposalCard key={proposal.id} proposal={proposal} />
+            <ProposalCard key={proposal.id} proposal={proposal} onVote={handleVote} />
           ))}
         </div>
       </div>

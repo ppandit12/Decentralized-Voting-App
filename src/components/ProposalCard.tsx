@@ -2,7 +2,7 @@
 
 import { ThumbsUp, ThumbsDown, Calendar, Hash } from 'lucide-react';
 
-export default function ProposalCard({ proposal }) {
+export default function ProposalCard({ proposal, onVote }) {
   const isPassed = proposal.voteCountAsYes > proposal.voteCountAsNo && !proposal.active;
   
   return (
@@ -37,8 +37,8 @@ export default function ProposalCard({ proposal }) {
       <div className="flex flex-col md:flex-row items-center gap-8 pt-6 border-t border-zinc-800/50">
         <div className="flex-1 w-full">
           <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest mb-2">
-            <span className="text-zinc-400">Yes: {proposal.voteCountAsYes} VTK</span>
-            <span className="text-zinc-400">No: {proposal.voteCountAsNo} VTK</span>
+            <span className="text-zinc-400">Yes: {proposal.voteCountAsYes.toLocaleString()} VTK</span>
+            <span className="text-zinc-400">No: {proposal.voteCountAsNo.toLocaleString()} VTK</span>
           </div>
           <div className="w-full h-1.5 bg-zinc-900 rounded-full overflow-hidden flex">
             <div 
@@ -54,11 +54,17 @@ export default function ProposalCard({ proposal }) {
         
         {proposal.active && (
           <div className="flex gap-3">
-            <button className="flex items-center gap-2 px-6 py-2 bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/30 rounded-xl transition-all font-bold text-xs uppercase tracking-widest">
+            <button 
+              onClick={() => onVote(proposal.id, true)}
+              className="flex items-center gap-2 px-6 py-2 bg-purple-600/10 hover:bg-purple-600 text-purple-400 hover:text-white border border-purple-500/30 rounded-xl transition-all font-bold text-xs uppercase tracking-widest active:scale-95"
+            >
               <ThumbsUp size={14} />
               Vote Yes
             </button>
-            <button className="flex items-center gap-2 px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-zinc-700 rounded-xl transition-all font-bold text-xs uppercase tracking-widest">
+            <button 
+              onClick={() => onVote(proposal.id, false)}
+              className="flex items-center gap-2 px-6 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white border border-zinc-700 rounded-xl transition-all font-bold text-xs uppercase tracking-widest active:scale-95"
+            >
               <ThumbsDown size={14} />
               Vote No
             </button>

@@ -1,22 +1,10 @@
 import { ethers } from "ethers";
+import addresses from "./addresses.json";
+import abis from "./abis.json";
 
-const DAO_ABI = [
-  "function createProposal(string memory _ipfsHash) external",
-  "function vote(uint256 _proposalId, bool _support) external",
-  "function executeProposal(uint256 _proposalId) external",
-  "function getProposal(uint256 _proposalId) external view returns (string memory ipfsHash, uint256 voteCountAsYes, uint256 voteCountAsNo, uint256 endTime, bool executed)",
-  "function nextProposalId() external view returns (uint256)",
-  "function votingToken() external view returns (address)",
-  "event ProposalCreated(uint256 indexed id, string ipfsHash, uint256 endTime)",
-  "event Voted(uint256 indexed proposalId, address indexed voter, bool support, uint256 weight)"
-];
-
-const TOKEN_ABI = [
-  "function balanceOf(address owner) external view returns (uint256)",
-  "function mint(address to, uint256 amount) external",
-  "function symbol() external view returns (string)",
-  "function decimals() external view returns (uint8)"
-];
+const DAO_ABI = abis.DaoVoting;
+const TOKEN_ABI = abis.VotingToken;
+const ADDRESSES = addresses;
 
 export async function getWeb3Provider() {
   if (typeof window !== "undefined" && window.ethereum) {
@@ -25,8 +13,23 @@ export async function getWeb3Provider() {
   return null;
 }
 
-export async function getContract(address, abi, signer) {
-  return new ethers.Contract(address, abi, signer);
+export async function getSigner() {
+  const provider = await getWeb3Provider();
+  if (provider) {
+    return await provider.getSigner();
+  }
+  return null;
 }
 
-export { DAO_ABI, TOKEN_ABI };
+export async function getContract(address, abi, withSigner = false) {
+  const provider = await getWeb3Provider();
+  if (!provider) return null;
+
+  if (withSigner) {
+    const signer = await provider.getSigner();
+    return new ethers.Contract(address, abi, signer);
+  }
+  return new ethers.Contract(address, abi, provider);
+}
+
+export { DAO_ABI, TOKEN_ABI, ADDRESSES };

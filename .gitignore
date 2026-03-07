@@ -1,6 +1,12 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+node_modules/
+hardhat/node_modules/
+.env
+build/
+cache/
+artifacts/
 /node_modules
 /.pnp
 .pnp.*

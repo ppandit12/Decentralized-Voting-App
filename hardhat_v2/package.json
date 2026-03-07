@@ -1,0 +1,14 @@
+{
+  "name": "hardhat-v3",
+  "version": "1.0.0",
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^7.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "hardhat": "^3.1.11"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0",
+    "solc": "^0.8.24"
+  }
+}
